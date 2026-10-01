@@ -1,4 +1,26 @@
 {
   "description": "Buy sell and give away preowned goods inside community.",
-  "secrets": []
+  "secrets": [],
+  "tests": [
+    {
+      "id": "home.grid",
+      "name": "Listing grid renders",
+      "path": "/",
+      "expectSelector": ".item-card",
+      "visual": true,
+      "impact": ["public/index.html", "server.js"]
+    },
+    {
+      "id": "item.detail",
+      "name": "Item detail opens",
+      "path": "/#/item/1",
+      "expectSelector": "#detail-back"
+    },
+    {
+      "id": "post.form",
+      "name": "Post form renders",
+      "path": "/#/post",
+      "expectSelector": "#post-form"
+    }
+  ]
 }

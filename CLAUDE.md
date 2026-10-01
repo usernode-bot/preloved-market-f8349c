@@ -60,23 +60,8 @@ the platform fixes the base commit, and none of this applies.
 
 ## Starter template
 
-The screen this app currently ships — the hero, the "What's already
-working" card, and the Press! example (the demo markup in
-`public/index.html`, the `/api/press` and `/api/leaderboard` routes, and
-the `presses` table bootstrap in `server.js`) — is placeholder content
-from the Homeroom starter template, not product intent.
-
-When the user asks for their first real feature, REPLACE the template
-screen rather than building alongside it:
-
-- remove the `usernode-starter-notice@1` block in `public/index.html`
-  (both sentinel comments and everything between them),
-- remove or repurpose the "Try the example" card, its demo endpoints and
-  the `presses` table as appropriate,
-- rewrite `README.md` to describe the actual app.
-
-Keep the `usernode-dev-console@1` forwarder `<script>` when rewriting the
-HTML — that block is platform infrastructure, not template content.
+_(removed — the starter template screen was replaced by the real app in the
+first build; the `presses` demo table and its endpoints are gone too.)_
 
 If a rule below this line conflicts with the hosted conventions, the
 hosted conventions win. This file is **app-specific** — write down
@@ -88,13 +73,19 @@ tables you've marked private), etc.
 
 ## About Preloved Market
 
-Buy sell and give away preowned goods inside community.
-
-_(add a sentence or two more of product context here so Claude Code has a
-shared understanding of what this app is for)_
+Buy sell and give away preowned goods inside community. One `items` table
+holds every listing; the frontend is a single HTML file with hash-routed
+views (`#/` grid, `#/item/:id` detail, `#/post` form).
 
 ## App-specific conventions
 
-_(optional — e.g. "all currency values stored as integer cents, not
-floats"; "the `posts` table is append-only"; "avoid adding new
-dependencies"; etc.)_
+- All currency is stored as **integer cents** in `price_cents` (NULL for
+  giveaways); the API accepts dollars and converts.
+- `condition` is a fixed vocabulary: `new` | `like-new` | `good` | `fair`.
+  `status` is `available` | `sold` | `given` (priced items are `sold`,
+  giveaways are `given`). Both are validated server-side; keep any new
+  vocabulary in server.js's `CONDITIONS`/`STATUSES` constants and the
+  frontend's `CONDITIONS` array in sync.
+- User content is interpolated into HTML only through the `esc()` helper.
+- Staging seeds six "Staging demo: …" listings owned by the fake user
+  `staging-demo-user` when the items table is empty (server.js boot).
