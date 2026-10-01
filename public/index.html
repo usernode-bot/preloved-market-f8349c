@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
   <script>
   // usernode-dev-console@1
   (function () {
@@ -27,7 +27,7 @@
             seen.add(val);
           }
           if (typeof val === 'function') return '[Function ' + (val.name || 'anonymous') + ']';
-          if (val instanceof Error) return val.stack || (val.name + ': ' + val.message);
+          if (val instanceof Error) return val.stack || val.message;
           return val;
         });
       } catch (e) { try { return String(v); } catch (_) { return '[unserializable]'; } }
@@ -65,130 +65,476 @@
   </script>
   <title>Preloved Market</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%237c3aed'/><circle cx='50' cy='50' r='18' fill='white'/></svg>">
-  <!-- Tailwind, PRECOMPILED for this app (was cdn.tailwindcss.com's
-       in-browser engine plus an inline tailwind.config here). The config
-       moved to tailwind.config.js in the repo root; npm run build compiles
-       it to public/tailwind.css with Docker or Paketo on every image build, so the
-       stylesheet is regenerated from THIS commit's markup every deploy and
-       can never drift behind the code. ~7 KB of CSS instead of a ~400 KB
-       engine, and no flash of unstyled content.
-       Writing class names as whole literals is what keeps this working — a
-       class assembled from fragments at runtime (e.g. "bg-" + tone + "-500")
-       is invisible to the compiler. If you genuinely need runtime-generated
-       classes, swap this link for the platform-hosted engine instead:
-       <script src="/usernode-tailwind/v1/tailwind.js"></script> -->
+  <!-- Tailwind, PRECOMPILED for this app. The config lives in
+       tailwind.config.js in the repo root; npm run build compiles it to
+       public/tailwind.css on every image build, so the stylesheet is
+       regenerated from THIS commit's markup every deploy. Class names are
+       written as whole literals (also inside JS strings) so the compiler's
+       regex over source text finds every one of them. -->
   <link rel="stylesheet" href="/tailwind.css">
-  <!-- The platform bridge, centrally hosted and loaded by RELATIVE path (the
-       handler in server.js serves it under a plain "node server.js"; the
-       platform's edge answers it everywhere else). Never vendor it and never
-       write a hostname in front of it.
+  <!-- The platform bridge, centrally hosted and loaded by RELATIVE path.
        It is NOT conditional on this app calling a bridge API: it is also how
-       the app ANSWERS the shell, so a scaffold without it is invisible to
-       anything that asks the frame a question. Offline launch is one of those.
-       Another is the page's colour: the bridge reports this document's opaque
-       ground to the shell (#1581), which is what makes the platform bar above
-       the app take the app's tone instead of the viewer's theme (#1945). This
-       scaffold paints a dark page (bg-zinc-950 on the body element), so
-       without this tag a brand-new app sits under a light bar. -->
+       the app ANSWERS the shell (offline launch, theme, safe areas). -->
   <script src="/usernode-bridge/v1/bridge.js"></script>
+  <!-- The platform's native-feel UI kit (centrally hosted, relative path):
+       pressed states on tappable cards/buttons, switches, toasts, screen
+       transitions, safe-area helpers for the bottom action. -->
+  <link rel="stylesheet" href="/usernode-native/v1/native.css">
+  <script src="/usernode-native/v1/native.js"></script>
+  <!-- Theme: the platform forwards the viewer's resolved light/dark choice
+       through the bridge; the OS preference is the fallback when the app is
+       opened standalone. Runs after the bridge tag so first paint is right. -->
+  <script>
+    (function () {
+      var media = window.matchMedia('(prefers-color-scheme: dark)');
+      function applyTheme() {
+        var theme = (window.usernode && window.usernode.theme)
+          || (media.matches ? 'dark' : 'light');
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+        document.documentElement.style.colorScheme = theme;
+      }
+      applyTheme();
+      window.addEventListener('usernode:theme-changed', applyTheme);
+      media.addEventListener('change', applyTheme);
+    })();
+  </script>
 </head>
-<body class="bg-zinc-950 text-zinc-100 min-h-screen">
-  <main class="max-w-md mx-auto px-4 py-10 flex flex-col gap-6">
+<body class="bg-zinc-100 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 min-h-screen antialiased">
 
-    <!-- usernode-starter-notice@1 — starter-template messaging. When building
-         the user's real app, replace this whole screen and delete this block,
-         both sentinel comments included. -->
-    <section class="rounded-2xl border border-violet-500/30 bg-gradient-to-b from-violet-600/20 to-transparent p-6 text-center flex flex-col items-center gap-3">
-      <span class="inline-block rounded-full bg-violet-600/20 text-violet-300 text-xs font-semibold uppercase tracking-wide px-3 py-1">Starter template</span>
-      <h1 class="text-2xl font-bold">Preloved Market</h1>
-      <p class="text-sm text-zinc-300 leading-relaxed">Welcome to your new app! Everything on this screen is placeholder content that came with it.</p>
-      <p class="text-sm text-zinc-300 leading-relaxed">Tap the <strong class="text-violet-300 font-semibold">Homeroom icon</strong> in the header and choose <strong class="text-violet-300 font-semibold">Start a new change</strong> to start building your app. Describe what you'd like in plain English, and it will be turned into your real app.</p>
-    </section>
+  <!-- ============ Home: search, condition filters, listing grid ============ -->
+  <section id="home-view" class="max-w-3xl mx-auto px-4 pb-28">
+    <header class="pt-6 pb-2">
+      <h1 class="text-2xl font-bold tracking-tight">Preloved Market</h1>
+      <p id="item-count" class="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5"></p>
+    </header>
 
-    <section>
-      <h2 class="text-sm font-medium text-zinc-500 mb-2 px-1">What's already working</h2>
-      <div class="rounded-xl border border-zinc-800 bg-zinc-900/60 divide-y divide-zinc-800">
-        <div class="flex items-start gap-3 p-4">
-          <svg class="w-5 h-5 text-violet-400 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 0 1 0 1.4l-7 7a1 1 0 0 1-1.4 0l-3-3a1 1 0 1 1 1.4-1.4L9 11.6l6.3-6.3a1 1 0 0 1 1.4 0Z" clip-rule="evenodd"/></svg>
-          <div>
-            <p class="text-sm font-semibold text-zinc-100">Sign-in</p>
-            <p class="text-sm text-zinc-400">You're signed in through Homeroom automatically — no accounts to build.</p>
-          </div>
-        </div>
-        <div class="flex items-start gap-3 p-4">
-          <svg class="w-5 h-5 text-violet-400 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 0 1 0 1.4l-7 7a1 1 0 0 1-1.4 0l-3-3a1 1 0 1 1 1.4-1.4L9 11.6l6.3-6.3a1 1 0 0 1 1.4 0Z" clip-rule="evenodd"/></svg>
-          <div>
-            <p class="text-sm font-semibold text-zinc-100">Database</p>
-            <p class="text-sm text-zinc-400">Your app has its own private database, ready to store things.</p>
-          </div>
-        </div>
-        <div class="flex items-start gap-3 p-4">
-          <svg class="w-5 h-5 text-violet-400 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 0 1 0 1.4l-7 7a1 1 0 0 1-1.4 0l-3-3a1 1 0 1 1 1.4-1.4L9 11.6l6.3-6.3a1 1 0 0 1 1.4 0Z" clip-rule="evenodd"/></svg>
-          <div>
-            <p class="text-sm font-semibold text-zinc-100">Live API</p>
-            <p class="text-sm text-zinc-400">The example below talks to a real server — try it.</p>
+    <div class="sticky top-0 z-20 -mx-4 px-4 pt-2 pb-3 bg-zinc-100/90 dark:bg-zinc-950/90 backdrop-blur">
+      <label class="relative block">
+        <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="search-input" type="search" placeholder="Search items"
+          class="w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 pl-9 pr-3 py-2.5 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500">
+      </label>
+      <div id="filter-chips" class="mt-2.5 flex gap-2 overflow-x-auto"></div>
+    </div>
+
+    <div id="grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-1"></div>
+    <div id="list-status" class="hidden mt-6 text-center"></div>
+  </section>
+
+  <!-- ============ Item detail ============ -->
+  <section id="detail-view" class="hidden max-w-2xl mx-auto px-4 pb-28">
+    <button id="detail-back" class="un-pressable inline-flex items-center gap-0.5 text-sm font-semibold text-violet-600 dark:text-violet-400 pt-4 pb-3">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+      Back
+    </button>
+
+    <div id="detail-body" class="hidden space-y-4">
+      <div class="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden shadow-sm">
+        <div class="relative aspect-square bg-gradient-to-br from-zinc-200 to-zinc-100 dark:from-zinc-800 dark:to-zinc-900 flex items-center justify-center">
+          <svg class="w-16 h-16 text-zinc-400 dark:text-zinc-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8 12 3 3 8v8l9 5 9-5V8Z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg>
+          <div id="detail-sold-overlay" class="hidden absolute inset-0 bg-zinc-950/50 items-end p-3">
+            <span id="detail-sold-label" class="rounded-md bg-zinc-950/80 text-white text-xs font-semibold px-2 py-1"></span>
           </div>
         </div>
       </div>
-    </section>
-    <!-- /usernode-starter-notice@1 -->
 
-    <section class="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 flex flex-col items-center gap-5">
-      <div class="w-full flex items-baseline justify-between gap-2">
-        <h2 class="text-sm font-medium text-zinc-500">Try the example</h2>
-        <span class="text-xs text-zinc-600">This example will be replaced</span>
+      <div class="flex items-start justify-between gap-3">
+        <h2 id="detail-title" class="text-xl font-bold leading-snug"></h2>
+        <span id="detail-badge" class="shrink-0 rounded-full text-xs font-semibold px-2.5 py-1"></span>
+      </div>
+      <p id="detail-price" class="text-2xl font-bold tracking-tight"></p>
+
+      <div class="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 flex items-center gap-3">
+        <span id="seller-avatar" class="w-9 h-9 rounded-full bg-violet-600/15 text-violet-700 dark:text-violet-300 flex items-center justify-center text-sm font-bold"></span>
+        <div>
+          <p class="text-xs text-zinc-500 dark:text-zinc-400">Seller</p>
+          <p id="detail-seller" class="text-sm font-semibold"></p>
+        </div>
+      </div>
+      <p class="text-xs text-zinc-500 dark:text-zinc-400">Message the seller on Homeroom to arrange pickup and payment.</p>
+
+      <div id="seller-controls" class="hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 space-y-3">
+        <div class="flex items-center justify-between gap-3">
+          <p class="text-xs text-zinc-500 dark:text-zinc-400">You posted this item.</p>
+          <p id="owner-status" class="text-xs font-semibold"></p>
+        </div>
+        <button id="owner-toggle" class="un-pressable w-full rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"></button>
+      </div>
+    </div>
+
+    <div id="detail-status" class="hidden mt-6 text-center"></div>
+  </section>
+
+  <!-- ============ Post an item ============ -->
+  <section id="post-view" class="hidden max-w-md mx-auto px-4 pb-28">
+    <button id="post-back" class="un-pressable inline-flex items-center gap-0.5 text-sm font-semibold text-violet-600 dark:text-violet-400 pt-4 pb-3">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+      Back
+    </button>
+
+    <h2 class="text-xl font-bold tracking-tight">Post an item</h2>
+
+    <form id="post-form" class="space-y-5 mt-4" novalidate>
+      <div>
+        <label for="post-title" class="text-sm font-medium">Title</label>
+        <input id="post-title" maxlength="120" placeholder="What are you selling?"
+          class="mt-1.5 w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2.5 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500">
+        <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-1">At least 3 characters.</p>
       </div>
 
-      <button id="press-btn" class="w-32 h-32 rounded-full bg-violet-600 hover:bg-violet-500 active:scale-95 transition-all text-white text-xl font-bold shadow-lg shadow-violet-600/30">
-        Press!
-      </button>
-
-      <div id="count" class="text-lg text-zinc-400">0 total presses</div>
-
-      <div class="w-full max-w-sm">
-        <h3 class="text-sm font-medium text-zinc-500 mb-2 text-center">Leaderboard</h3>
-        <div id="leaderboard" class="space-y-1"></div>
+      <div>
+        <p class="text-sm font-medium">Condition</p>
+        <div id="post-conditions" class="flex flex-wrap gap-2 mt-2"></div>
       </div>
-    </section>
 
-    <p class="text-center text-xs text-zinc-600">Built on Homeroom — this template screen disappears once you build your real app.</p>
-  </main>
+      <div class="flex items-center justify-between rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4">
+        <div class="pr-3">
+          <p class="text-sm font-medium">Give away for free</p>
+          <p class="text-xs text-zinc-500 dark:text-zinc-400">No price needed.</p>
+        </div>
+        <input type="checkbox" id="post-giveaway" class="un-switch">
+      </div>
+
+      <div id="post-price-wrap">
+        <label for="post-price" class="text-sm font-medium">Price</label>
+        <div class="relative mt-1.5">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500">$</span>
+          <input id="post-price" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"
+            class="w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 pl-7 pr-3 py-2.5 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500">
+        </div>
+      </div>
+
+      <p id="post-error" class="hidden text-sm font-medium text-red-600 dark:text-red-400"></p>
+
+      <button type="submit" class="un-pressable w-full rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">Post item</button>
+    </form>
+  </section>
+
+  <!-- Bottom-right action: the one primary thing to do from the grid,
+       within thumb reach on a phone. -->
+  <a href="#/post" id="fab" class="un-pressable un-safe-bottom fixed right-4 bottom-4 z-30 inline-flex items-center gap-2 rounded-full bg-violet-600 text-white font-semibold pl-4 pr-5 py-3 shadow-lg shadow-violet-600/30">
+    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    <span class="text-sm">Post item</span>
+  </a>
 
   <script>
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get('token') || '';
-    const headers = token ? { 'x-usernode-token': token } : {};
+    // ---------- token & session ----------
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const urlToken = params.get('token');
+      if (urlToken) { try { sessionStorage.setItem('pm-token', urlToken); } catch {} }
+    })();
+    const TOKEN = new URLSearchParams(window.location.search).get('token')
+      || (() => { try { return sessionStorage.getItem('pm-token') || ''; } catch { return ''; } })();
+    const apiHeaders = TOKEN ? { 'x-usernode-token': TOKEN } : {};
 
-    async function loadLeaderboard() {
-      const res = await fetch('/api/leaderboard', { headers });
-      if (!res.ok) return;
-      const { leaderboard } = await res.json();
-      const el = document.getElementById('leaderboard');
-      if (!leaderboard.length) {
-        el.innerHTML = '<p class="text-center text-zinc-600 text-sm">No presses yet</p>';
-        return;
-      }
-      el.innerHTML = leaderboard.map((r, i) =>
-        '<div class="flex justify-between px-3 py-1 rounded ' + (i === 0 ? 'bg-violet-600/20 text-violet-300' : 'text-zinc-400') + '">' +
-        '<span>' + (i + 1) + '. ' + r.username + '</span>' +
-        '<span class="font-mono">' + r.presses + '</span></div>'
-      ).join('');
-      const total = leaderboard.reduce((s, r) => s + parseInt(r.presses), 0);
-      document.getElementById('count').textContent = total + ' total presses';
+    // ---------- domain ----------
+    const CONDITIONS = [
+      { key: 'new', label: 'New', badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300' },
+      { key: 'like-new', label: 'Like new', badge: 'bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300' },
+      { key: 'good', label: 'Good', badge: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300' },
+      { key: 'fair', label: 'Fair', badge: 'bg-zinc-200 text-zinc-600 dark:bg-zinc-500/15 dark:text-zinc-300' },
+    ];
+    const conditionLabel = (key) => (CONDITIONS.find(c => c.key === key) || {}).label || key;
+    const conditionBadge = (key) => (CONDITIONS.find(c => c.key === key) || {}).badge || '';
+
+    // ---------- helpers ----------
+    function esc(s) {
+      return String(s ?? '').replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+    function formatPrice(cents) {
+      if (cents == null) return '';
+      const dollars = cents / 100;
+      return '$' + dollars.toLocaleString('en-US', Number.isInteger(dollars)
+        ? {} : { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    function statusLabel(item) {
+      return item.status === 'sold' ? 'Sold' : item.status === 'given' ? 'Given away' : '';
+    }
+    function toast(msg) {
+      if (window.unNative && unNative.toast) { try { unNative.toast(msg); } catch {} }
     }
 
-    document.getElementById('press-btn').addEventListener('click', async () => {
-      try {
-        const res = await fetch('/api/press', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', ...headers },
-        });
-        if (res.ok) loadLeaderboard();
-        else if (res.status === 401) document.getElementById('count').textContent = 'Sign in to press!';
-      } catch {}
+    const PLACEHOLDER_SVG =
+      '<svg class="w-10 h-10 text-zinc-400 dark:text-zinc-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8 12 3 3 8v8l9 5 9-5V8Z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg>';
+    const SOLD_OVERLAY_TMPL =
+      '<div class="absolute inset-0 bg-zinc-950/50 flex items-end p-2"><span class="rounded-md bg-zinc-950/80 text-white text-xs font-semibold px-2 py-1">LABEL</span></div>';
+
+    // ---------- state ----------
+    let viewer = null;
+    let searchTerm = '';
+    let conditionFilter = '';
+
+    const $ = (id) => document.getElementById(id);
+    const sections = { home: $('home-view'), detail: $('detail-view'), post: $('post-view') };
+
+    function showSection(name) {
+      for (const key in sections) sections[key].classList.toggle('hidden', key !== name);
+      $('fab').classList.toggle('hidden', name !== 'home');
+    }
+
+    // Wrap a view swap in the kit's push/pop screen transition when available.
+    function transition(name, type) {
+      const fn = () => { showSection(name); window.scrollTo(0, 0); };
+      if (window.unNative && unNative.transition && type && type !== 'none') {
+        try { unNative.transition(fn, { type }); return; } catch {}
+      }
+      fn();
+    }
+
+    // ---------- home: filters ----------
+    function renderChips() {
+      const chips = [{ key: '', label: 'All' }].concat(CONDITIONS);
+      $('filter-chips').innerHTML = chips.map(function (c) {
+        const active = conditionFilter === c.key;
+        const cls = active
+          ? 'shrink-0 un-pressable rounded-full bg-violet-600 text-white text-sm font-semibold px-3.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-violet-500'
+          : 'shrink-0 un-pressable rounded-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 text-sm font-medium px-3.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-violet-500';
+        return '<button data-condition="' + c.key + '" class="' + cls + '">' + esc(c.label) + '</button>';
+      }).join('');
+    }
+
+    $('filter-chips').addEventListener('click', function (e) {
+      const btn = e.target.closest('button[data-condition]');
+      if (!btn) return;
+      conditionFilter = btn.getAttribute('data-condition');
+      renderChips();
+      loadItems();
     });
 
-    loadLeaderboard();
+    let searchTimer = null;
+    $('search-input').addEventListener('input', function () {
+      searchTerm = this.value.trim();
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(function () { if (!sections.home.classList.contains('hidden')) loadItems(); }, 250);
+    });
+
+    // ---------- home: listing grid ----------
+    function cardHtml(item) {
+      const taken = item.status !== 'available';
+      const priceHtml = item.is_giveaway
+        ? '<span class="rounded-full bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300 text-xs font-semibold px-2 py-0.5">Giveaway</span>'
+        : '<span class="text-sm font-bold">' + esc(formatPrice(item.price_cents)) + '</span>';
+      const badge = '<span class="rounded-full ' + conditionBadge(item.condition) + ' text-xs font-semibold px-2 py-0.5">' + esc(conditionLabel(item.condition)) + '</span>';
+      return '<a href="#/item/' + item.id + '" class="item-card un-pressable block rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden shadow-sm focus:outline-none focus:ring-2 focus:ring-violet-500">' +
+        '<div class="relative aspect-square bg-gradient-to-br from-zinc-200 to-zinc-100 dark:from-zinc-800 dark:to-zinc-900 flex items-center justify-center">' +
+          PLACEHOLDER_SVG +
+          (taken ? SOLD_OVERLAY_TMPL.replace('LABEL', esc(statusLabel(item))) : '') +
+        '</div>' +
+        '<div class="p-3 space-y-1.5">' +
+          '<p class="text-sm font-medium leading-snug line-clamp-2 h-10">' + esc(item.title) + '</p>' +
+          '<div class="flex items-center justify-between gap-2">' + priceHtml + badge +
+        '</div></div></a>';
+    }
+
+    const SKELETON_CARD =
+      '<div class="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden animate-pulse">' +
+        '<div class="aspect-square bg-zinc-200 dark:bg-zinc-800"></div>' +
+        '<div class="p-3 space-y-2"><div class="h-3.5 rounded bg-zinc-200 dark:bg-zinc-800 w-4/5"></div><div class="h-3.5 rounded bg-zinc-200 dark:bg-zinc-800 w-2/5"></div></div>' +
+      '</div>';
+
+    function showListStatus(html) {
+      $('grid').innerHTML = '';
+      const el = $('list-status');
+      el.innerHTML = html;
+      el.classList.remove('hidden');
+    }
+
+    async function loadItems() {
+      const el = $('list-status');
+      el.classList.add('hidden');
+      $('grid').innerHTML = SKELETON_CARD.repeat(4);
+      $('item-count').textContent = '';
+      const qs = new URLSearchParams();
+      if (searchTerm) qs.set('q', searchTerm);
+      if (conditionFilter) qs.set('condition', conditionFilter);
+      try {
+        const res = await fetch('/api/items?' + qs.toString(), { headers: apiHeaders });
+        if (!res.ok) throw new Error('Could not load items');
+        const { items } = await res.json();
+        $('item-count').textContent = items.length === 1 ? '1 item' : items.length + ' items';
+        if (!items.length) {
+          showListStatus(
+            '<p class="text-sm text-zinc-500 dark:text-zinc-400">No items match. Try a different search or filter.</p>' +
+            '<a href="#/post" class="un-pressable inline-block mt-3 rounded-xl bg-violet-600 text-white text-sm font-semibold px-4 py-2.5">Post the first item</a>');
+          return;
+        }
+        $('grid').innerHTML = items.map(cardHtml).join('');
+      } catch (err) {
+        showListStatus(
+          '<p class="text-sm text-zinc-500 dark:text-zinc-400">' + esc(err.message) + '. Check your connection and try again.</p>' +
+          '<button id="retry-load" class="un-pressable mt-3 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-sm font-semibold px-4 py-2.5">Try again</button>');
+        const retry = $('retry-load');
+        if (retry) retry.addEventListener('click', loadItems);
+      }
+    }
+
+    // ---------- detail ----------
+    let detailItem = null;
+
+    function renderDetail(item) {
+      detailItem = item;
+      $('detail-title').textContent = item.title;
+      $('detail-badge').className = 'shrink-0 rounded-full text-xs font-semibold px-2.5 py-1 ' + conditionBadge(item.condition);
+      $('detail-badge').textContent = conditionLabel(item.condition);
+      $('detail-price').textContent = item.is_giveaway ? 'Giveaway — free' : formatPrice(item.price_cents);
+      $('detail-seller').textContent = '@' + item.username;
+      $('seller-avatar').textContent = (item.username || '?').charAt(0).toUpperCase();
+      const taken = item.status !== 'available';
+      $('detail-sold-overlay').classList.toggle('hidden', !taken);
+      $('detail-sold-overlay').classList.toggle('flex', taken);
+      $('detail-sold-label').textContent = statusLabel(item);
+
+      const isOwner = viewer && viewer.id === item.user_id;
+      $('seller-controls').classList.toggle('hidden', !isOwner);
+      if (isOwner) renderOwnerControls(item);
+      $('detail-body').classList.remove('hidden');
+      $('detail-status').classList.add('hidden');
+    }
+
+    function renderOwnerControls(item) {
+      const taken = item.status !== 'available';
+      $('owner-status').textContent = taken ? 'Marked as ' + statusLabel(item).toLowerCase() : 'Marked as available';
+      const btn = $('owner-toggle');
+      btn.textContent = taken ? 'Mark as available' : (item.is_giveaway ? 'Mark as given away' : 'Mark as sold');
+    }
+
+    $('owner-toggle').addEventListener('click', async function () {
+      if (!detailItem) return;
+      const next = detailItem.status === 'available'
+        ? (detailItem.is_giveaway ? 'given' : 'sold')
+        : 'available';
+      try {
+        const res = await fetch('/api/items/' + detailItem.id + '/status', {
+          method: 'PATCH',
+          headers: Object.assign({ 'Content-Type': 'application/json' }, apiHeaders),
+          body: JSON.stringify({ status: next }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Could not update the item');
+        detailItem = data.item;
+        renderDetail(detailItem);
+        toast(next === 'available' ? 'Item is available again' : 'Marked as ' + statusLabel(detailItem).toLowerCase());
+      } catch (err) {
+        toast(err.message);
+      }
+    });
+
+    async function loadDetail(id) {
+      $('detail-body').classList.add('hidden');
+      const el = $('detail-status');
+      el.innerHTML = '<p class="text-sm text-zinc-500 dark:text-zinc-400">Loading…</p>';
+      el.classList.remove('hidden');
+      try {
+        const res = await fetch('/api/items/' + id, { headers: apiHeaders });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Could not load this item');
+        renderDetail(data.item);
+      } catch (err) {
+        el.innerHTML =
+          '<p class="text-sm text-zinc-500 dark:text-zinc-400">' + esc(err.message) + '.</p>' +
+          '<a href="#/" class="un-pressable inline-block mt-3 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-sm font-semibold px-4 py-2.5">Back to items</a>';
+      }
+    }
+
+    $('detail-back').addEventListener('click', function () { location.hash = '#/'; });
+
+    // ---------- post form ----------
+    let postCondition = '';
+
+    function renderPostConditions() {
+      $('post-conditions').innerHTML = CONDITIONS.map(function (c) {
+        const active = postCondition === c.key;
+        const cls = active
+          ? 'un-pressable rounded-full bg-violet-600 text-white text-sm font-semibold px-3.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-violet-500'
+          : 'un-pressable rounded-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 text-sm font-medium px-3.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-violet-500';
+        return '<button type="button" data-post-condition="' + c.key + '" class="' + cls + '">' + esc(c.label) + '</button>';
+      }).join('');
+    }
+
+    $('post-conditions').addEventListener('click', function (e) {
+      const btn = e.target.closest('button[data-post-condition]');
+      if (!btn) return;
+      postCondition = btn.getAttribute('data-post-condition');
+      renderPostConditions();
+    });
+
+    $('post-giveaway').addEventListener('change', function () {
+      $('post-price-wrap').classList.toggle('hidden', this.checked);
+    });
+
+    $('post-back').addEventListener('click', function () { location.hash = '#/'; });
+
+    function resetPostForm() {
+      $('post-form').reset();
+      postCondition = '';
+      renderPostConditions();
+      $('post-price-wrap').classList.remove('hidden');
+      $('post-error').classList.add('hidden');
+    }
+
+    $('post-form').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const errEl = $('post-error');
+      errEl.classList.add('hidden');
+      const title = $('post-title').value.trim();
+      const giveaway = $('post-giveaway').checked;
+      const price = parseFloat($('post-price').value);
+
+      let problem = '';
+      if (title.length < 3) problem = 'Title must be at least 3 characters.';
+      else if (!postCondition) problem = 'Pick a condition.';
+      else if (!giveaway && (!Number.isFinite(price) || price <= 0)) problem = 'Enter a price above zero, or mark the item a giveaway.';
+      if (problem) { errEl.textContent = problem; errEl.classList.remove('hidden'); return; }
+
+      try {
+        const res = await fetch('/api/items', {
+          method: 'POST',
+          headers: Object.assign({ 'Content-Type': 'application/json' }, apiHeaders),
+          body: JSON.stringify({ title: title, condition: postCondition, is_giveaway: giveaway, price: price }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Could not post the item');
+        toast('Item posted');
+        resetPostForm();
+        location.hash = '#/';
+      } catch (err) {
+        errEl.textContent = err.message;
+        errEl.classList.remove('hidden');
+      }
+    });
+
+    // ---------- routing ----------
+    function route() {
+      const hash = location.hash || '#/';
+      const m = hash.match(/^#\/item\/(\d+)$/);
+      if (m) {
+        transition('detail', 'push');
+        loadDetail(parseInt(m[1], 10));
+      } else if (hash === '#/post') {
+        resetPostForm();
+        transition('post', 'push');
+      } else {
+        transition('home', 'pop');
+        loadItems();
+      }
+    }
+
+    // ---------- boot ----------
+    async function loadViewer() {
+      try {
+        const res = await fetch('/api/me', { headers: apiHeaders });
+        if (res.ok) viewer = await res.json();
+      } catch {}
+    }
+
+    renderChips();
+    renderPostConditions();
+    loadViewer();
+    route();
+    window.addEventListener('hashchange', route);
   </script>
 </body>
 </html>

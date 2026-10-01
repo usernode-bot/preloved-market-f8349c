@@ -1,27 +1,41 @@
 # Preloved Market
 
-> **Starter template** — this repo was scaffolded by Homeroom Social
-> Vibecoding. Everything in it is placeholder example code until the
-> app's first real feature is built.
+Buy, sell and give away preowned goods inside your community.
 
-The scaffold is a small working demo that proves the plumbing works:
+Browse a listing grid of what neighbours are offering, open an item to see
+its condition, price and seller, and post your own items in seconds —
+either at a price or as a free giveaway.
 
-- **Sign-in** — the server verifies the platform-issued user token
-  (an RS256 JWT) on every request, so the app already knows who is
-  using it. No accounts to build.
-- **Database** — the app has its own private Postgres database; the
-  demo stores button presses in a `presses` table.
-- **Live API** — two example routes (`/api/press`,
-  `/api/leaderboard`) read and write through a real Express server.
-- **Styling** — Tailwind CSS, precompiled by `npm run build` during
-  image creation with either Kubernetes/Paketo or standalone Docker.
+## Features
 
-## Replacing the template
+- **Listing grid** — photo placeholder, title, price (or Giveaway pill) and
+  a colour-coded condition badge on every card; sold items are dimmed with
+  a Sold overlay.
+- **Search & filter** — free-text search over titles plus a condition
+  filter (New / Like new / Good / Fair).
+- **Item detail** — full listing with seller contact and, for the seller
+  themselves, a toggle to mark the item as sold (or given away) and back to
+  available.
+- **Post an item** — validated form: title of at least 3 characters, a
+  condition, and either a price or the "Give away for free" switch.
 
-Open the app on Homeroom, tap the Homeroom icon in the header, choose
-**Start a new change**, and describe the app you want in plain English.
-The template will be replaced with your real app. You can also run
-Claude Code against this repo directly; start with `CLAUDE.md`, which
-carries the app-specific notes and points at the platform rules.
+## Stack
 
-Once the real app exists, rewrite this README to describe it.
+Node.js / Express + PostgreSQL, Tailwind (precompiled per build), served
+inside the Homeroom platform shell. The frontend is a single HTML file
+with hash-routed views (`#/` grid, `#/item/:id` detail, `#/post` form).
+
+## Data model
+
+One `items` table: `title` (3–120 chars), `price_cents` (integer cents,
+NULL for giveaways), `is_giveaway`, `condition` (`new` | `like-new` |
+`good` | `fair`), `status` (`available` | `sold` | `given`), plus the
+poster's `user_id`/`username`.
+
+## Development
+
+```sh
+npm ci --include=dev
+npm run build   # compiles styles/tailwind-input.css → public/tailwind.css
+npm start       # needs DATABASE_URL; runs migrations + staging seeds on boot
+```
