@@ -1,5 +1,6 @@
 {
   "description": "Buy sell and give away preowned goods inside community.",
+  "icon": { "emoji": "♻️" },
   "secrets": [],
   "tests": [
     {
