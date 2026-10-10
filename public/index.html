@@ -103,9 +103,15 @@
 
   <!-- ============ Home: search, condition filters, listing grid ============ -->
   <section id="home-view" class="max-w-3xl mx-auto px-4 pb-28">
-    <header class="pt-6 pb-2">
-      <h1 class="text-2xl font-bold tracking-tight">Preloved Market</h1>
-      <p id="item-count" class="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5"></p>
+    <header class="pt-6 pb-2 flex items-start justify-between gap-3">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight">Preloved Market</h1>
+        <p id="item-count" class="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5"></p>
+      </div>
+      <a href="#/news" id="news-link" class="un-pressable shrink-0 inline-flex items-center gap-1.5 text-sm font-semibold text-violet-600 dark:text-violet-400 pt-1.5 focus:outline-none focus:ring-2 focus:ring-violet-500 rounded-md">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18h-5"/><path d="M18 14h-8"/><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-4 0v-9a2 2 0 0 1 2-2h2"/><rect width="8" height="4" x="10" y="6" rx="1"/></svg>
+        Market news
+      </a>
     </header>
 
     <div class="sticky top-0 z-20 -mx-4 px-4 pt-2 pb-3 bg-zinc-100/90 dark:bg-zinc-950/90 backdrop-blur">
@@ -210,11 +216,59 @@
     </form>
   </section>
 
+  <!-- ============ Market news ============ -->
+  <section id="news-view" class="hidden max-w-2xl mx-auto px-4 pb-28">
+    <button id="news-back" class="un-pressable inline-flex items-center gap-0.5 text-sm font-semibold text-violet-600 dark:text-violet-400 pt-4 pb-3">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+      Back
+    </button>
+
+    <h2 class="text-xl font-bold tracking-tight">Market news</h2>
+
+    <div id="news-list" class="space-y-3 mt-4"></div>
+    <div id="news-status" class="hidden mt-6 text-center"></div>
+  </section>
+
+  <!-- ============ Post news ============ -->
+  <section id="news-post-view" class="hidden max-w-md mx-auto px-4 pb-28">
+    <button id="news-post-back" class="un-pressable inline-flex items-center gap-0.5 text-sm font-semibold text-violet-600 dark:text-violet-400 pt-4 pb-3">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+      Back
+    </button>
+
+    <h2 class="text-xl font-bold tracking-tight">Post news</h2>
+
+    <form id="news-form" class="space-y-5 mt-4" novalidate>
+      <div>
+        <label for="news-title" class="text-sm font-medium">Title</label>
+        <input id="news-title" maxlength="120" placeholder="What is happening?"
+          class="mt-1.5 w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2.5 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500">
+        <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-1">At least 3 characters.</p>
+      </div>
+
+      <div>
+        <label for="news-body" class="text-sm font-medium">News</label>
+        <textarea id="news-body" maxlength="500" rows="5" placeholder="Share the details with the community"
+          class="mt-1.5 w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2.5 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500"></textarea>
+        <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Up to 500 characters.</p>
+      </div>
+
+      <p id="news-error" class="hidden text-sm font-medium text-red-600 dark:text-red-400"></p>
+
+      <button type="submit" class="un-pressable w-full rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">Post news</button>
+    </form>
+  </section>
+
   <!-- Bottom-right action: the one primary thing to do from the grid,
        within thumb reach on a phone. -->
   <a href="#/post" id="fab" class="un-pressable un-safe-bottom fixed right-4 bottom-4 z-30 inline-flex items-center gap-2 rounded-full bg-violet-600 text-white font-semibold pl-4 pr-5 py-3 shadow-lg shadow-violet-600/30">
     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
     <span class="text-sm">Post item</span>
+  </a>
+  <!-- The news list's own primary action, in the same spot. -->
+  <a href="#/news/post" id="news-fab" class="hidden un-pressable un-safe-bottom fixed right-4 bottom-4 z-30 inline-flex items-center gap-2 rounded-full bg-violet-600 text-white font-semibold pl-4 pr-5 py-3 shadow-lg shadow-violet-600/30">
+    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    <span class="text-sm">Post news</span>
   </a>
 
   <script>
@@ -268,11 +322,15 @@
     let conditionFilter = '';
 
     const $ = (id) => document.getElementById(id);
-    const sections = { home: $('home-view'), detail: $('detail-view'), post: $('post-view') };
+    const sections = {
+      home: $('home-view'), detail: $('detail-view'), post: $('post-view'),
+      news: $('news-view'), newsPost: $('news-post-view'),
+    };
 
     function showSection(name) {
       for (const key in sections) sections[key].classList.toggle('hidden', key !== name);
       $('fab').classList.toggle('hidden', name !== 'home');
+      $('news-fab').classList.toggle('hidden', name !== 'news');
     }
 
     // Wrap a view swap in the kit's push/pop screen transition when available.
@@ -506,9 +564,96 @@
       }
     });
 
+    // ---------- market news ----------
+    function newsCardHtml(post) {
+      const date = new Date(post.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+      return '<article class="news-card rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm p-4">' +
+        '<h3 class="font-bold leading-snug">' + esc(post.title) + '</h3>' +
+        '<p class="text-sm text-zinc-700 dark:text-zinc-300 mt-1.5 whitespace-pre-line break-words">' + esc(post.body) + '</p>' +
+        '<p class="text-xs text-zinc-500 dark:text-zinc-400 mt-3">@' + esc(post.username) + ' · ' + esc(date) + '</p>' +
+      '</article>';
+    }
+
+    const NEWS_SKELETON_CARD =
+      '<div class="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 space-y-2.5 animate-pulse">' +
+        '<div class="h-4 rounded bg-zinc-200 dark:bg-zinc-800 w-3/5"></div>' +
+        '<div class="h-3.5 rounded bg-zinc-200 dark:bg-zinc-800 w-full"></div>' +
+        '<div class="h-3.5 rounded bg-zinc-200 dark:bg-zinc-800 w-4/5"></div>' +
+      '</div>';
+
+    function showNewsStatus(html) {
+      $('news-list').innerHTML = '';
+      const el = $('news-status');
+      el.innerHTML = html;
+      el.classList.remove('hidden');
+    }
+
+    async function loadNews() {
+      $('news-status').classList.add('hidden');
+      $('news-list').innerHTML = NEWS_SKELETON_CARD.repeat(3);
+      try {
+        const res = await fetch('/api/news', { headers: apiHeaders });
+        if (!res.ok) throw new Error('Could not load news');
+        const { news } = await res.json();
+        if (!news.length) {
+          showNewsStatus(
+            '<p class="text-sm text-zinc-500 dark:text-zinc-400">No news yet.</p>' +
+            '<a href="#/news/post" class="un-pressable inline-block mt-3 rounded-xl bg-violet-600 text-white text-sm font-semibold px-4 py-2.5">Post the first announcement</a>');
+          return;
+        }
+        $('news-list').innerHTML = news.map(newsCardHtml).join('');
+      } catch (err) {
+        showNewsStatus(
+          '<p class="text-sm text-zinc-500 dark:text-zinc-400">Could not load news. Check your connection and try again.</p>' +
+          '<button id="retry-news" class="un-pressable mt-3 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-sm font-semibold px-4 py-2.5">Try again</button>');
+        const retry = $('retry-news');
+        if (retry) retry.addEventListener('click', loadNews);
+      }
+    }
+
+    $('news-back').addEventListener('click', function () { location.hash = '#/'; });
+    $('news-post-back').addEventListener('click', function () { location.hash = '#/news'; });
+
+    function resetNewsForm() {
+      $('news-form').reset();
+      $('news-error').classList.add('hidden');
+    }
+
+    $('news-form').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const errEl = $('news-error');
+      errEl.classList.add('hidden');
+      const title = $('news-title').value.trim();
+      const body = $('news-body').value.trim();
+
+      let problem = '';
+      if (title.length < 3) problem = 'Title must be at least 3 characters.';
+      else if (!body) problem = 'Write some news.';
+      if (problem) { errEl.textContent = problem; errEl.classList.remove('hidden'); return; }
+
+      try {
+        const res = await fetch('/api/news', {
+          method: 'POST',
+          headers: Object.assign({ 'Content-Type': 'application/json' }, apiHeaders),
+          body: JSON.stringify({ title: title, body: body }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Could not post the news');
+        toast('News posted');
+        resetNewsForm();
+        location.hash = '#/news';
+      } catch (err) {
+        errEl.textContent = err.message;
+        errEl.classList.remove('hidden');
+      }
+    });
+
     // ---------- routing ----------
+    let lastHash = '';
     function route() {
       const hash = location.hash || '#/';
+      const prev = lastHash;
+      lastHash = hash;
       const m = hash.match(/^#\/item\/(\d+)$/);
       if (m) {
         transition('detail', 'push');
@@ -516,6 +661,13 @@
       } else if (hash === '#/post') {
         resetPostForm();
         transition('post', 'push');
+      } else if (hash === '#/news') {
+        // Coming back from the composer is a step back, not a new screen.
+        transition('news', prev === '#/news/post' ? 'pop' : 'push');
+        loadNews();
+      } else if (hash === '#/news/post') {
+        resetNewsForm();
+        transition('newsPost', 'push');
       } else {
         transition('home', 'pop');
         loadItems();

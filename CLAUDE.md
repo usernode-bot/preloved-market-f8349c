@@ -86,6 +86,10 @@ views (`#/` grid, `#/item/:id` detail, `#/post` form).
   giveaways are `given`). Both are validated server-side; keep any new
   vocabulary in server.js's `CONDITIONS`/`STATUSES` constants and the
   frontend's `CONDITIONS` array in sync.
+- Market news lives in the public `news_posts` table (`#/news` list,
+  `#/news/post` form, `GET`/`POST /api/news`): title 3–120 chars, body
+  1–500 chars (no detail page, so the cap keeps every card readable).
+  Staging seeds three "Staging demo: …" announcements when it is empty.
 - User content is interpolated into HTML only through the `esc()` helper.
 - Staging seeds six "Staging demo: …" listings owned by the fake user
   `staging-demo-user` when the items table is empty (server.js boot).

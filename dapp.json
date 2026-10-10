@@ -22,6 +22,20 @@
       "name": "Post form renders",
       "path": "/#/post",
       "expectSelector": "#post-form"
+    },
+    {
+      "id": "news.list",
+      "name": "Market news renders",
+      "path": "/#/news",
+      "expectSelector": "#news-list .news-card",
+      "visual": true,
+      "impact": ["public/index.html", "server.js"]
+    },
+    {
+      "id": "news.form",
+      "name": "Post news form renders",
+      "path": "/#/news/post",
+      "expectSelector": "#news-form"
     }
   ]
 }
