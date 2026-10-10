@@ -18,6 +18,8 @@ either at a price or as a free giveaway.
   available.
 - **Post an item** — validated form: title of at least 3 characters, a
   condition, and either a price or the "Give away for free" switch.
+- **Market news** — community announcements about the market (newest
+  first), opened from the home header; any member can post one.
 
 ## Stack
 

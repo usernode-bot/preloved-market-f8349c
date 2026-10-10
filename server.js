@@ -236,6 +236,44 @@ app.patch('/api/items/:id/status', async (req, res) => {
   }
 });
 
+// Market news: short community announcements about the market itself.
+// Anyone signed in can read and post, the same open model as listings.
+app.get('/api/news', async (_req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, user_id, username, title, body, created_at
+       FROM news_posts
+       ORDER BY created_at DESC, id DESC
+       LIMIT 50`
+    );
+    res.json({ news: rows });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Bodies are capped at 500 characters so every announcement reads in full
+// on its card; there is no detail page.
+app.post('/api/news', async (req, res) => {
+  const title = typeof req.body.title === 'string' ? req.body.title.trim() : '';
+  if (title.length < 3) return res.status(400).json({ error: 'Title must be at least 3 characters.' });
+  if (title.length > 120) return res.status(400).json({ error: 'Title must be 120 characters or fewer.' });
+  const body = typeof req.body.body === 'string' ? req.body.body.trim() : '';
+  if (!body) return res.status(400).json({ error: 'Write some news.' });
+  if (body.length > 500) return res.status(400).json({ error: 'News must be 500 characters or fewer.' });
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO news_posts (user_id, username, title, body)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, user_id, username, title, body, created_at`,
+      [req.user.id, req.user.username, title, body]
+    );
+    res.json({ post: rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // HTML shell: serve the app if authenticated. Unauthenticated top-level
@@ -291,6 +329,16 @@ async function start() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS news_posts (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      username VARCHAR(255) NOT NULL,
+      title VARCHAR(120) NOT NULL,
+      body VARCHAR(500) NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
   // The starter template's demo press counter. Its endpoints are gone with
   // the template screen, and the table never held anything but demo press
   // counts, so it goes too.
@@ -311,6 +359,21 @@ async function start() {
           (900001, 'staging-demo-user', 'Staging demo: Potted monstera', NULL, true, 'new', 'available'),
           (900001, 'staging-demo-user', 'Staging demo: Vintage film camera', 120000, false, 'fair', 'available'),
           (900001, 'staging-demo-user', 'Staging demo: Winter jacket', 25000, false, 'good', 'sold')
+      `);
+    }
+    const { rows: newsRows } = await pool.query('SELECT COUNT(*)::int AS n FROM news_posts');
+    if (newsRows[0].n === 0) {
+      await pool.query(`
+        INSERT INTO news_posts (user_id, username, title, body, created_at) VALUES
+          (900001, 'staging-demo-user', 'Staging demo: Pickup point moves to the community hall',
+            'From next week, please arrange pickups at the community hall by the front entrance instead of sending items by mail. It is open every weekday from 9 am to 6 pm.',
+            NOW() - INTERVAL '3 days'),
+          (900001, 'staging-demo-user', 'Staging demo: Giveaway weekend starts Friday',
+            'Clearing out the garage or the toy box? Post your free items this weekend and mark them as giveaways so neighbours can find them with the filters.',
+            NOW() - INTERVAL '1 day'),
+          (900001, 'staging-demo-user', 'Staging demo: Flea market this Saturday',
+            'Bring a blanket and anything you want to sell to the park on Saturday from 10 am. Tables are first come, first served. Bring your own change.',
+            NOW())
       `);
     }
   }
