@@ -22,6 +22,12 @@
       "name": "Post form renders",
       "path": "/#/post",
       "expectSelector": "#post-form"
+    },
+    {
+      "id": "news.list",
+      "name": "Market news renders",
+      "path": "/#/news",
+      "expectSelector": ".news-card"
     }
   ]
 }
