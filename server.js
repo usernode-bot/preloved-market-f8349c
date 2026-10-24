@@ -154,6 +154,23 @@ app.get('/api/items', async (req, res) => {
   }
 });
 
+// Market news: owner-curated, read-only announcements. Newest first, capped
+// at 50 because the list stays short and there is no paging. The app writes
+// no rows itself, so the table is append-only by construction.
+app.get('/api/news', async (_req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, title, body, created_at
+       FROM news_posts
+       ORDER BY created_at DESC, id DESC
+       LIMIT 50`
+    );
+    res.json({ posts: rows });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/items/:id', async (req, res) => {
   const id = parseInt(req.params.id, 10);
   if (!Number.isInteger(id)) return res.status(404).json({ error: 'Item not found' });
@@ -291,6 +308,17 @@ async function start() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
+  // Market news posts. Announcements only, no personal data, so the table
+  // stays public. The app never writes rows: the owner adds them with SQL.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS news_posts (
+      id SERIAL PRIMARY KEY,
+      title VARCHAR(120) NOT NULL,
+      body TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
   // The starter template's demo press counter. Its endpoints are gone with
   // the template screen, and the table never held anything but demo press
   // counts, so it goes too.
@@ -311,6 +339,24 @@ async function start() {
           (900001, 'staging-demo-user', 'Staging demo: Potted monstera', NULL, true, 'new', 'available'),
           (900001, 'staging-demo-user', 'Staging demo: Vintage film camera', 120000, false, 'fair', 'available'),
           (900001, 'staging-demo-user', 'Staging demo: Winter jacket', 25000, false, 'good', 'sold')
+      `);
+    }
+    // Same idea for Market news: three obviously fake posts so the page is
+    // never empty on a preview. Production gets no rows and shows the empty
+    // state until the owner adds the first post.
+    const news = await pool.query('SELECT COUNT(*)::int AS n FROM news_posts');
+    if (news.rows[0].n === 0) {
+      await pool.query(`
+        INSERT INTO news_posts (title, body, created_at) VALUES
+          ('Staging demo: Welcome to Market news',
+           'Updates about Preloved Market will show up here: new features, community tips and seasonal reminders.',
+           NOW()),
+          ('Staging demo: Tips for a smooth pickup',
+           'Agree on a time and a public place before you meet, and check the item together before you pay.',
+           NOW() - INTERVAL '1 day'),
+          ('Staging demo: Clear out before winter',
+           'Got things you no longer use? Post them as a giveaway and help a neighbour.',
+           NOW() - INTERVAL '2 days')
       `);
     }
   }

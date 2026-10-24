@@ -104,8 +104,16 @@
   <!-- ============ Home: search, condition filters, listing grid ============ -->
   <section id="home-view" class="max-w-3xl mx-auto px-4 pb-28">
     <header class="pt-6 pb-2">
-      <h1 class="text-2xl font-bold tracking-tight">Preloved Market</h1>
-      <p id="item-count" class="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5"></p>
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight">Preloved Market</h1>
+          <p id="item-count" class="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5"></p>
+        </div>
+        <a href="#/news" id="news-link" class="un-pressable inline-flex items-center gap-1 text-sm font-semibold text-violet-600 dark:text-violet-400 pt-1.5">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h13v14H6a2 2 0 0 1-2-2V5Z"/><path d="M17 9h3v8a2 2 0 0 1-2 2"/><path d="M8 9h5M8 13h5"/></svg>
+          News
+        </a>
+      </div>
     </header>
 
     <div class="sticky top-0 z-20 -mx-4 px-4 pt-2 pb-3 bg-zinc-100/90 dark:bg-zinc-950/90 backdrop-blur">
@@ -210,6 +218,18 @@
     </form>
   </section>
 
+  <!-- ============ Market news: owner-written posts, read-only ============ -->
+  <section id="news-view" class="hidden max-w-2xl mx-auto px-4 pb-28">
+    <button id="news-back" class="un-pressable inline-flex items-center gap-0.5 text-sm font-semibold text-violet-600 dark:text-violet-400 pt-4 pb-3">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+      Back
+    </button>
+
+    <h2 class="text-xl font-bold tracking-tight">Market news</h2>
+    <div id="news-list" class="space-y-3 mt-4"></div>
+    <div id="news-status" class="hidden mt-6 text-center"></div>
+  </section>
+
   <!-- Bottom-right action: the one primary thing to do from the grid,
        within thumb reach on a phone. -->
   <a href="#/post" id="fab" class="un-pressable un-safe-bottom fixed right-4 bottom-4 z-30 inline-flex items-center gap-2 rounded-full bg-violet-600 text-white font-semibold pl-4 pr-5 py-3 shadow-lg shadow-violet-600/30">
@@ -268,7 +288,7 @@
     let conditionFilter = '';
 
     const $ = (id) => document.getElementById(id);
-    const sections = { home: $('home-view'), detail: $('detail-view'), post: $('post-view') };
+    const sections = { home: $('home-view'), detail: $('detail-view'), post: $('post-view'), news: $('news-view') };
 
     function showSection(name) {
       for (const key in sections) sections[key].classList.toggle('hidden', key !== name);
@@ -370,6 +390,46 @@
         if (retry) retry.addEventListener('click', loadItems);
       }
     }
+
+    // ---------- market news ----------
+    function formatDate(iso) {
+      return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function newsCardHtml(post) {
+      return '<article class="news-card rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4">' +
+        '<p class="text-sm font-semibold leading-snug">' + esc(post.title) + '</p>' +
+        '<p class="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">' + esc(formatDate(post.created_at)) + '</p>' +
+        '<p class="text-sm text-zinc-700 dark:text-zinc-300 mt-2 whitespace-pre-line">' + esc(post.body) + '</p>' +
+      '</article>';
+    }
+
+    async function loadNews() {
+      const status = $('news-status');
+      status.classList.add('hidden');
+      $('news-list').innerHTML = '';
+      status.innerHTML = '<p class="text-sm text-zinc-500 dark:text-zinc-400">Loading…</p>';
+      status.classList.remove('hidden');
+      try {
+        const res = await fetch('/api/news', { headers: apiHeaders });
+        if (!res.ok) throw new Error('Could not load the news');
+        const { posts } = await res.json();
+        if (!posts.length) {
+          status.innerHTML = '<p class="text-sm text-zinc-500 dark:text-zinc-400">No news yet. Check back soon.</p>';
+          return;
+        }
+        status.classList.add('hidden');
+        $('news-list').innerHTML = posts.map(newsCardHtml).join('');
+      } catch (err) {
+        status.innerHTML =
+          '<p class="text-sm text-zinc-500 dark:text-zinc-400">' + esc(err.message) + '. Check your connection and try again.</p>' +
+          '<button id="retry-news" class="un-pressable mt-3 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-sm font-semibold px-4 py-2.5">Try again</button>';
+        const retry = $('retry-news');
+        if (retry) retry.addEventListener('click', loadNews);
+      }
+    }
+
+    $('news-back').addEventListener('click', function () { location.hash = '#/'; });
 
     // ---------- detail ----------
     let detailItem = null;
@@ -516,6 +576,9 @@
       } else if (hash === '#/post') {
         resetPostForm();
         transition('post', 'push');
+      } else if (hash === '#/news') {
+        transition('news', 'push');
+        loadNews();
       } else {
         transition('home', 'pop');
         loadItems();
