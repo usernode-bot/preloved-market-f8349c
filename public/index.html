@@ -107,9 +107,9 @@
       <div class="flex items-start justify-between gap-3">
         <div>
           <h1 class="text-2xl font-bold tracking-tight">Preloved Market</h1>
-          <p id="item-count" class="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5"></p>
+          <p id="item-count" class="text-sm text-zinc-600 dark:text-zinc-400 mt-0.5"></p>
         </div>
-        <a href="#/news" id="news-link" class="un-pressable inline-flex items-center gap-1 text-sm font-semibold text-violet-600 dark:text-violet-400 pt-1.5">
+        <a href="#/news" id="news-link" class="un-pressable inline-flex items-center gap-1 min-h-[44px] text-sm font-semibold text-violet-600 dark:text-violet-400 -mt-1.5">
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h13v14H6a2 2 0 0 1-2-2V5Z"/><path d="M17 9h3v8a2 2 0 0 1-2 2"/><path d="M8 9h5M8 13h5"/></svg>
           News
         </a>
@@ -120,7 +120,7 @@
       <label class="relative block">
         <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
         <input id="search-input" type="search" placeholder="Search items"
-          class="w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 pl-9 pr-3 py-2.5 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500">
+          class="w-full min-h-[44px] rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 pl-9 pr-3 py-2.5 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500">
       </label>
       <div id="filter-chips" class="mt-2.5 flex gap-2 overflow-x-auto"></div>
     </div>
@@ -232,7 +232,7 @@
 
   <!-- Bottom-right action: the one primary thing to do from the grid,
        within thumb reach on a phone. -->
-  <a href="#/post" id="fab" class="un-pressable un-safe-bottom fixed right-4 bottom-4 z-30 inline-flex items-center gap-2 rounded-full bg-violet-600 text-white font-semibold pl-4 pr-5 py-3 shadow-lg shadow-violet-600/30">
+  <a href="#/post" id="fab" class="un-pressable un-safe-bottom min-h-[44px] fixed right-4 bottom-4 z-30 inline-flex items-center gap-2 rounded-full bg-violet-600 text-white font-semibold pl-4 pr-5 py-3 shadow-lg shadow-violet-600/30">
     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
     <span class="text-sm">Post item</span>
   </a>
@@ -310,8 +310,8 @@
       $('filter-chips').innerHTML = chips.map(function (c) {
         const active = conditionFilter === c.key;
         const cls = active
-          ? 'shrink-0 un-pressable rounded-full bg-violet-600 text-white text-sm font-semibold px-3.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-violet-500'
-          : 'shrink-0 un-pressable rounded-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 text-sm font-medium px-3.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-violet-500';
+          ? 'shrink-0 un-pressable inline-flex items-center justify-center min-h-[44px] rounded-full bg-violet-600 text-white text-sm font-semibold px-3.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-violet-500'
+          : 'shrink-0 un-pressable inline-flex items-center justify-center min-h-[44px] rounded-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 text-sm font-medium px-3.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-violet-500';
         return '<button data-condition="' + c.key + '" class="' + cls + '">' + esc(c.label) + '</button>';
       }).join('');
     }
